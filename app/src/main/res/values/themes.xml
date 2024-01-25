@@ -2,5 +2,5 @@
 <resources>
 
 <!--    <style name="Theme.Vero" parent="android:Theme.Material.Light.NoActionBar" />-->
-    <style name="Theme.Vero" parent="Theme.AppCompat.DayNight.NoActionBar"/>
+    <style name="Theme.Vero" parent="Theme.AppCompat.DayNight.DarkActionBar"/>
 </resources>
