@@ -12,6 +12,7 @@ import com.example.vero.databinding.ActivityHomeBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -52,22 +53,18 @@ class Home : AppCompatActivity() {
 //                Log.e("access", accessToken)
                 converter()
 //                binding.ListOfAll.adapter=ArrayAdapter(this@Home,android.R.layout.simple_list_item_1,activityData)
+                withContext(Dispatchers.Main) {
+                    val recycler = binding.recyclerMain
 
+                    recycler.layoutManager = LinearLayoutManager(this@Home)
+                    recycler.adapter = RecyclerItems(activityData)
+                }
             } catch (e: Exception) {
                 if (e != null)
                     Log.e("Erorr", e.toString())
                 Log.e("Catch", "Bu kaç " + e.message.toString())
             }
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-//        val recycler = binding.recyclerMain
-//
-//        recycler.layoutManager = LinearLayoutManager(this@Home)
-//        recycler.adapter = RecyclerItems(activityData)
     }
 
     private fun post(url: String, json: String): String {
