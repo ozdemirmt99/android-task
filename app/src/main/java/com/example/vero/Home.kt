@@ -3,12 +3,19 @@ package com.example.vero
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.LinearLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import com.example.vero.Models.Item
+import com.example.vero.databinding.ActivityHomeBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.Exception
 
@@ -19,41 +26,50 @@ class Home : AppCompatActivity() {
     private val client = OkHttpClient()
     private lateinit var response: String
     private lateinit var accessToken: String
-    private lateinit var data:Any
+    private lateinit var data: String
+    private lateinit var binding: ActivityHomeBinding
+    private lateinit var activityData: List<Item>
+    private val listem = listOf("ali", "veli")
+    private val listem2 = listOf<Item>(
+        Item("ad", "aa", "ss", "ssad"),
+        Item("ad", "aa", "ss", "ssad"),
+        Item("ad", "aa", "ss", "ssad")
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
+        binding = ActivityHomeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         GlobalScope.launch(Dispatchers.IO) {
             try {
                 response =
                     post(tokenUrl, "{\r\n  \"username\":\"365\",\r\n  \"password\":\"1\"\r\n}")
                 var json = JSONObject(response)
                 var auth = JSONObject(json.get("oauth").toString())
-                accessToken= auth.get("access_token").toString()
-                Log.e("Tag", this@Home.response.toString())
-                data=get(dataUrl)
-                Log.e("access",accessToken)
+                accessToken = auth.get("access_token").toString()
+//                Log.e("Tag", this@Home.response.toString())
+                data = get(dataUrl)
+//                Log.e("access", accessToken)
+                converter()
+//                binding.ListOfAll.adapter=ArrayAdapter(this@Home,android.R.layout.simple_list_item_1,activityData)
+
             } catch (e: Exception) {
-                if (e != null) Log.e("Catch", e.message.toString())
+                if (e != null)
+                    Log.e("Erorr", e.toString())
+                Log.e("Catch", "Bu kaç " + e.message.toString())
             }
         }
-
-
-//        GlobalScope.launch(Dispatchers.IO) {
-//            try {
-//                data = get(dataUrl)
-//                Log.e("get",data.toString())
-//            } catch (ex:Exception) {
-//
-//            }
-//
-//        }
     }
 
-    //    override fun onResume() {
-//        super.onResume()
+    override fun onStart() {
+        super.onStart()
+
+//        val recycler = binding.recyclerMain
 //
-//    }
+//        recycler.layoutManager = LinearLayoutManager(this@Home)
+//        recycler.adapter = RecyclerItems(activityData)
+    }
+
     private fun post(url: String, json: String): String {
 
         val body = json.toRequestBody(JSON)
@@ -67,15 +83,33 @@ class Home : AppCompatActivity() {
             response.body!!.string() // Ensure a non-null body
         }
     }
-    private fun get(url:String) : String {
+
+    private fun get(url: String): String {
         val req = Request.Builder()
             .url(url)
             .get()
-            .header("Authorization","Bearer ${accessToken}")
+            .header("Authorization", "Bearer ${accessToken}")
             .build()
 
         return client.newCall(req).execute().use { response ->
             response.body!!.string() // Ensure a non-null body
         }
+    }
+
+    fun converter() {
+        var allData = JSONArray(data)
+        val returnedList = mutableListOf<Item>()
+
+        for (i in 0..allData.length() - 1) {
+            val current = JSONObject(allData[i].toString())
+            val title = current.get("title").toString()
+            val task = current.get("task").toString()
+            val description = current.get("description").toString()
+            val colorCode = current.get("colorCode").toString()
+            val newItem =
+                Item(task = task, title = title, description = description, colorCode = colorCode)
+            returnedList.add(newItem)
+        }
+        activityData = returnedList
     }
 }
