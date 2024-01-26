@@ -4,10 +4,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import android.widget.LinearLayout
+import android.view.Menu
+import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.vero.Models.Item
 import com.example.vero.databinding.ActivityHomeBinding
@@ -21,6 +20,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.Exception
+import java.util.Locale
 
 class Home : AppCompatActivity() {
     private val tokenUrl = "https://api.baubuddy.de/index.php/login"
@@ -43,8 +43,42 @@ class Home : AppCompatActivity() {
         swipeRefreshLayout.setOnRefreshListener {
             swiping()
         }
+
         refresherPerMinute()
 
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.app_menu, menu)
+        val searchItem = menu!!.findItem(R.id.action_search)
+        val searchView = searchItem!!.actionView as SearchView
+        Log.e("null mu ", searchView.toString())
+
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Kullanıcı arama yapmak için gönder düğmesine bastığında çağrılır
+                query?.let {
+                    performSearch(it)
+                }
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                // Arama metni değiştikçe çağrılır
+                performSearch(newText!!)
+                return true
+            }
+        })
+
+        return true
+    }
+
+    private fun performSearch(query: String) {
+        var temp = activityData
+        temp = temp.filter { e -> e.title.toLowerCase(Locale("DE","de"))
+            .contains(query.toLowerCase(Locale("DE","de"))) }
+        binding.recyclerMain.adapter = RecyclerItems(temp)
     }
 
     fun swiping() {
@@ -100,9 +134,8 @@ class Home : AppCompatActivity() {
         val runnable = Runnable {
             fetcher()
         }
+
         handler.postDelayed(runnable, 60000)
-
-
     }
 
     fun fetcher() {
@@ -113,11 +146,9 @@ class Home : AppCompatActivity() {
                 var json = JSONObject(response)
                 var auth = JSONObject(json.get("oauth").toString())
                 accessToken = auth.get("access_token").toString()
-//                Log.e("Tag", this@Home.response.toString())
                 data = get(dataUrl)
-//                Log.e("access", accessToken)
                 converter()
-//                binding.ListOfAll.adapter=ArrayAdapter(this@Home,android.R.layout.simple_list_item_1,activityData)
+
                 withContext(Dispatchers.Main) {
                     val recycler = binding.recyclerMain
 
@@ -126,8 +157,7 @@ class Home : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 if (e != null)
-                    Log.e("Erorr", e.toString())
-                Log.e("Catch", "Bu kaç " + e.message.toString())
+                    Log.e("Fetcher Error", e.toString())
             }
         }
 
