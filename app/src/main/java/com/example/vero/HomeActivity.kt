@@ -7,6 +7,7 @@ import android.os.Handler
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -35,10 +36,13 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
     private lateinit var activityData: List<Item>
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var searchView: SearchView
     private val REQUEST_CODE_QR_SCAN = 1001
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fetcher()
@@ -51,27 +55,27 @@ class HomeActivity : AppCompatActivity() {
 
     }
 
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.qr_scan -> {
-                // Kamera aktivitesini başlat
                 val intent = Intent(this, CameraActivity::class.java)
                 startActivityForResult(intent, REQUEST_CODE_QR_SCAN)
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.app_menu, menu)
+
         val searchItem = menu!!.findItem(R.id.action_search)
-        val searchView = searchItem!!.actionView as SearchView
-        Log.e("null mu ", searchView.toString())
 
-
+        searchView = searchItem!!.actionView as SearchView
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                // Kullanıcı arama yapmak için gönder düğmesine bastığında çağrılır
                 query?.let {
                     performSearch(it)
                 }
@@ -79,7 +83,6 @@ class HomeActivity : AppCompatActivity() {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                // Arama metni değiştikçe çağrılır
                 performSearch(newText!!)
                 return true
             }
@@ -88,20 +91,37 @@ class HomeActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE_QR_SCAN && resultCode == RESULT_OK) {
+            val scannedCode = data?.getStringExtra("scanned")
+
+            scannedCode?.let {
+                searchView.visibility = View.VISIBLE
+                searchView.setQuery(scannedCode, false)
+            }
+        }
+    }
+
     private fun performSearch(query: String) {
         var temp = activityData
-        temp = temp.filter { e -> e.title.toLowerCase(Locale("DE","de"))
-            .contains(query.toLowerCase(Locale("DE","de"))) }
+
+        temp = temp.filter { e ->
+            e.title.toLowerCase(Locale("DE", "de"))
+                .contains(query.toLowerCase(Locale("DE", "de")))
+        }
+
         binding.recyclerMain.adapter = RecyclerItems(temp)
     }
 
     fun swiping() {
         fetcher()
+
         swipeRefreshLayout.isRefreshing = false
     }
 
     private fun post(url: String, json: String): String {
-
         val body = json.toRequestBody(JSON)
         val request = Request.Builder()
             .url(url)
@@ -140,6 +160,7 @@ class HomeActivity : AppCompatActivity() {
                 Item(task = task, title = title, description = description, colorCode = colorCode)
             returnedList.add(newItem)
         }
+
         activityData = returnedList
     }
 
@@ -159,8 +180,10 @@ class HomeActivity : AppCompatActivity() {
                     post(tokenUrl, "{\r\n  \"username\":\"365\",\r\n  \"password\":\"1\"\r\n}")
                 var json = JSONObject(response)
                 var auth = JSONObject(json.get("oauth").toString())
+
                 accessToken = auth.get("access_token").toString()
                 data = get(dataUrl)
+
                 converter()
 
                 withContext(Dispatchers.Main) {
@@ -174,6 +197,5 @@ class HomeActivity : AppCompatActivity() {
                     Log.e("Fetcher Error", e.toString())
             }
         }
-
     }
 }
