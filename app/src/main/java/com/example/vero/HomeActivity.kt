@@ -1,10 +1,12 @@
 package com.example.vero
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -22,7 +24,7 @@ import org.json.JSONObject
 import java.lang.Exception
 import java.util.Locale
 
-class Home : AppCompatActivity() {
+class HomeActivity : AppCompatActivity() {
     private val tokenUrl = "https://api.baubuddy.de/index.php/login"
     private val dataUrl = "https://api.baubuddy.de/dev/index.php/v1/tasks/select"
     private val JSON = "application/json; charset=utf-8".toMediaType()
@@ -33,6 +35,7 @@ class Home : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
     private lateinit var activityData: List<Item>
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private val REQUEST_CODE_QR_SCAN = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +51,17 @@ class Home : AppCompatActivity() {
 
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.qr_scan -> {
+                // Kamera aktivitesini başlat
+                val intent = Intent(this, CameraActivity::class.java)
+                startActivityForResult(intent, REQUEST_CODE_QR_SCAN)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.app_menu, menu)
         val searchItem = menu!!.findItem(R.id.action_search)
@@ -152,7 +166,7 @@ class Home : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     val recycler = binding.recyclerMain
 
-                    recycler.layoutManager = LinearLayoutManager(this@Home)
+                    recycler.layoutManager = LinearLayoutManager(this@HomeActivity)
                     recycler.adapter = RecyclerItems(activityData)
                 }
             } catch (e: Exception) {
